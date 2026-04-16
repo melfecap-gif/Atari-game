@@ -129,10 +129,12 @@ function findSegment(z) {
 
 function resetCars() {
     cars = [];
-    for (let n = 0; n < 20; n++) {
+    const CAR_COLORS = ['#FF0000', '#0000FF', '#FFFF00', '#FFFFFF']; // Bright Red, Blue, Yellow, White
+    for (let n = 0; n < 30; n++) { // Slightly more cars for challenge
         let offset = Math.random() * 0.8 * (Math.random() > 0.5 ? 1 : -1);
         let z = Math.floor(Math.random() * (segments.length - 100)) * SEGMENT_LENGTH + 2000;
-        let car = { offset: offset, z: z, speed: maxSpeed / 4 + Math.random() * maxSpeed / 2, color: '#f00' };
+        let color = CAR_COLORS[Math.floor(Math.random() * CAR_COLORS.length)];
+        let car = { offset: offset, z: z, speed: maxSpeed / 4 + Math.random() * maxSpeed / 2, color: color };
         let segment = findSegment(z);
         segment.cars.push(car);
         cars.push(car);
@@ -327,16 +329,33 @@ function drawCar(car, segment) {
     let scale = segment.p1.screen.scale;
     let destX = segment.p1.screen.x + (scale * car.offset * ROAD_WIDTH * width / 2);
     let destY = segment.p1.screen.y;
-    let w = 400 * scale * width / 2;
-    let h = 200 * scale * width / 2;
+    let w = 450 * scale * width / 2;
+    let h = 220 * scale * width / 2;
+    
+    // Ensure minimum size for distant cars to make them "apparent"
+    if (w < 4) w = 4;
+    if (h < 2) h = 2;
 
+    // Black outline for high contrast
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = Math.max(1, 2 * scale * width / 640);
+    
+    // Main Body
     ctx.fillStyle = car.color || '#00f'; 
     ctx.fillRect(destX - w/2, destY - h, w, h);
+    ctx.strokeRect(destX - w/2, destY - h, w, h);
     
-    // Atari detail: black wheels on sides
+    // Black wheels on sides (Larger)
     ctx.fillStyle = '#000';
-    ctx.fillRect(destX - w/2 - w/10, destY - h * 0.8, w/10, h * 0.6);
-    ctx.fillRect(destX + w/2, destY - h * 0.8, w/10, h * 0.6);
+    ctx.fillRect(destX - w/2 - w/12, destY - h * 0.8, w/10, h * 0.7);
+    ctx.fillRect(destX + w/2, destY - h * 0.8, w/10, h * 0.7);
+
+    // Tail lights (Bright red)
+    if (h > 5) { // Only draw if car is close enough
+        ctx.fillStyle = '#FF0000';
+        ctx.fillRect(destX - w/2 + 2, destY - h + 2, w/6, h/4);
+        ctx.fillRect(destX + w/2 - w/6 - 2, destY - h + 2, w/6, h/4);
+    }
 }
 
 function drawPlayer() {
