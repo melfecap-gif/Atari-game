@@ -137,8 +137,8 @@ function findSegment(z) {
 
 function resetCars() {
     cars = [];
-    const CAR_COLORS = ['#FF0000', '#0000FF', '#FFFF00', '#FFFFFF']; // Bright Red, Blue, Yellow, White
-    for (let n = 0; n < 30; n++) { // Slightly more cars for challenge
+    const CAR_COLORS = ['#FF0000', '#0000FF', '#FFFF00', '#FFFFFF'];
+    for (let n = 0; n < 30; n++) {
         let offset = Math.random() * 0.8 * (Math.random() > 0.5 ? 1 : -1);
         let z = Math.floor(Math.random() * (segments.length - 100)) * SEGMENT_LENGTH + 2000;
         let color = CAR_COLORS[Math.floor(Math.random() * CAR_COLORS.length)];
@@ -149,6 +149,34 @@ function resetCars() {
     }
 }
 
+let trackPoints = [];
+function drawMinimapTrack() {
+    const mapCanvas = document.createElement('canvas');
+    mapCanvas.id = 'map-canvas';
+    mapCanvas.width = 100;
+    mapCanvas.height = 150;
+    document.getElementById('minimap').appendChild(mapCanvas);
+    const mctx = mapCanvas.getContext('2d');
+    
+    mctx.strokeStyle = '#fff';
+    mctx.lineWidth = 2;
+    mctx.beginPath();
+    
+    trackPoints = [];
+    let curX = 0;
+    for (let i = 0; i < segments.length; i += 1) {
+        curX += segments[i].curve * (SEGMENT_LENGTH / 100);
+        if (i % 10 === 0) {
+            let px = 50 + curX / 5;
+            let py = 150 - (i / segments.length) * 150;
+            trackPoints.push({x: px, y: py});
+            if (i === 0) mctx.moveTo(px, py);
+            else mctx.lineTo(px, py);
+        }
+    }
+    mctx.stroke();
+}
+
 // --- Main Game Loop Functions ---
 
 function startGame() {
@@ -157,6 +185,7 @@ function startGame() {
     document.getElementById('hud').classList.remove('hidden');
     document.getElementById('minimap').classList.remove('hidden');
     
+    // Start slightly after the line so it can be seen if needed
     position = 0;
     speed = 0;
     playerX = 0;
@@ -165,6 +194,11 @@ function startGame() {
     gameActive = true;
     gameFinished = false;
     resetRoad();
+    
+    // Clear old map canvas if exists
+    const oldCanvas = document.getElementById('map-canvas');
+    if (oldCanvas) oldCanvas.remove();
+    drawMinimapTrack();
 }
 
 function update(dt) {
@@ -181,9 +215,12 @@ function update(dt) {
     position = (position + speed * dt);
     
     // Update map
-    let mapPercent = position / totalLength;
-    document.getElementById('map-player').style.bottom = (mapPercent * 142) + 'px';
-    document.getElementById('map-player').style.left = (46 + playerX * 20) + 'px';
+    let mapIndex = Math.floor((position / totalLength) * (trackPoints.length - 1));
+    if (mapIndex >= 0 && mapIndex < trackPoints.length) {
+        let point = trackPoints[mapIndex];
+        document.getElementById('map-player').style.left = (point.x - 4) + 'px';
+        document.getElementById('map-player').style.top = (point.y - 4) + 'px';
+    }
 
     // Check finish line
     if (position >= totalLength - (DRAW_DISTANCE * SEGMENT_LENGTH)) {
@@ -254,6 +291,9 @@ function draw() {
     // Draw Parallax Mountains
     drawMountains(mountainOffset);
 
+    // Camera follow logic: Camera X follows playerX
+    let camX = playerX * ROAD_WIDTH;
+
     let basePercent = (position % SEGMENT_LENGTH) / SEGMENT_LENGTH;
     
     let x = 0;
@@ -265,9 +305,6 @@ function draw() {
     for (let n = 0; n < DRAW_DISTANCE; n++) {
         let segment = segments[(baseSegment.index + n) % segments.length];
         segment.looped = segment.index < baseSegment.index;
-        
-        // Use partial playerX for camera to allow car to move across screen
-        let camX = playerX * ROAD_WIDTH * 0.5; 
         
         project(segment.p1, camX - x,      CAMERA_HEIGHT, position - (segment.looped ? totalLength : 0), CAMERA_DEPTH, width, height, ROAD_WIDTH);
         project(segment.p2, camX - x - dx, CAMERA_HEIGHT, position - (segment.looped ? totalLength : 0), CAMERA_DEPTH, width, height, ROAD_WIDTH);
@@ -382,8 +419,8 @@ function drawCar(car, segment) {
 function drawPlayer() {
     let w = 90;
     let h = 45;
-    // Move the player car sprite horizontally based on playerX
-    let x = width / 2 + (playerX * width / 2.5); 
+    // Camera is following the car, so we keep the car centered horizontally
+    let x = width / 2; 
     let y = height - 30;
 
     // Wheels (Atari blocky style)

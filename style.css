@@ -119,10 +119,10 @@ h1 {
     position: absolute;
     width: 8px;
     height: 8px;
-    background: #ff00ff;
+    background: #FF00FF;
     border: 1px solid #fff;
-    bottom: 0;
     left: 46px;
+    top: 140px; 
 }
 
 /* Retro Scanline effect */
