@@ -1,6 +1,5 @@
-node_modules
-dist
-dist-ssr
-*.local
-.vscode
+.vscode/
 .DS_Store
+node_modules/
+dist/
+.gemini/

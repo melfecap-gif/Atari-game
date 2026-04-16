@@ -1,16 +1,24 @@
-// Atari Grand Prix - Pseudo 3D Racing Logic
-// Developed for Atari Game Repository
+/**
+ * Retro GP - Pseudo-3D Racing Engine
+ * Inspired by Atari Grand Prix & Outrun
+ */
 
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
-const scoreEl = document.getElementById('scoreValue');
-const speedBar = document.getElementById('speedBar');
-const carIcon = document.getElementById('carIcon');
-const messageBoard = document.getElementById('messageBoard');
+const startBtn = document.getElementById('start-btn');
+const restartBtn = document.getElementById('restart-btn');
+const startScreen = document.getElementById('start-screen');
+const gameOverScreen = document.getElementById('game-over');
+const speedEl = document.getElementById('speed');
+const timeEl = document.getElementById('time');
+const finalTimeEl = document.getElementById('final-time');
 
-// --- Configuration ---
-const width = 1024;
-const height = 768;
+// Configuration
+const width = 800;
+const height = 600;
+canvas.width = width;
+canvas.height = height;
+
 const roadWidth = 2000;
 const segmentLength = 200;
 const rumbleLength = 3;
@@ -19,239 +27,263 @@ const fieldOfView = 100;
 const cameraHeight = 1000;
 const cameraDepth = 1 / Math.tan((fieldOfView / 2) * Math.PI / 180);
 const drawDistance = 300;
+const fogDensity = 5;
 
-const playerMaxSpeed = segmentLength / (1/60) * 0.8;
-const accel = playerMaxSpeed / 5;
-const breaking = -playerMaxSpeed / 2;
-const decel = -playerMaxSpeed / 10;
-const offRoadDecel = -playerMaxSpeed / 2;
-const offRoadLimit = playerMaxSpeed / 4;
-
-// Colors (Atari Style)
-const Colors = {
-    SKY:  '#000080',
-    TREE: '#006400',
-    FOG:  '#000000',
-    LIGHT:  { road: '#333', grass: '#004d00', rumble: '#fff' },
-    DARK:   { road: '#222', grass: '#004000', rumble: '#000' }
-};
-
-// --- State ---
-let cameraZ = 0;
-let playerX = 0;
+// Game State
+let playerX = 0; // -1 to 1
 let playerZ = 0;
+let cameraZ = 0;
 let speed = 0;
-let totalTime = 0;
-let gameStarted = false;
+const maxSpeed = 12000;
+const accel = maxSpeed / 5;
+const breaking = -maxSpeed / 2;
+const decel = -maxSpeed / 10;
+const offRoadDecel = -maxSpeed / 2;
+const offRoadLimit = maxSpeed / 4;
+
 let segments = [];
 let cars = [];
-let keys = {};
+let totalTrackLength = 0;
+let startTime = 0;
+let playing = false;
+let gameFinished = false;
 
 // Assets
-const background = new Image();
-background.src = './assets/background.png'; // Reusing the one I have or the new one if it worked
+const assets = {
+    background: new Image(),
+    player: new Image(),
+    obstacle: new Image()
+};
+assets.background.src = 'assets/background.png';
+assets.player.src = 'assets/player.png';
+assets.obstacle.src = 'assets/obstacle.png';
 
-// --- Initialization ---
+// Setup Keys
+const keys = { left: false, right: false, up: false, down: false };
+window.addEventListener('keydown', e => {
+    if (e.code === 'ArrowLeft') keys.left = true;
+    if (e.code === 'ArrowRight') keys.right = true;
+    if (e.code === 'ArrowUp') keys.up = true;
+    if (e.code === 'ArrowDown') keys.down = true;
+});
+window.addEventListener('keyup', e => {
+    if (e.code === 'ArrowLeft') keys.left = false;
+    if (e.code === 'ArrowRight') keys.right = false;
+    if (e.code === 'ArrowUp') keys.up = false;
+    if (e.code === 'ArrowDown') keys.down = false;
+});
+
+// Road Generation
 function resetRoad() {
     segments = [];
     for (let n = 0; n < 5000; n++) {
         segments.push({
-            p1: { world: { z: n * segmentLength }, screen: { x: 0, y: 0, w: 0 } },
-            p2: { world: { z: (n + 1) * segmentLength }, screen: { x: 0, y: 0, w: 0 } },
-            color: Math.floor(n / rumbleLength) % 2 ? Colors.LIGHT : Colors.DARK
+            index: n,
+            p1: { world: { x: 0, y: 0, z: n * segmentLength }, camera: {}, screen: {} },
+            p2: { world: { x: 0, y: 0, z: (n + 1) * segmentLength }, camera: {}, screen: {} },
+            curve: n > 500 && n < 1000 ? 2 : (n > 2000 && n < 2500 ? -3 : 0),
+            color: Math.floor(n / rumbleLength) % 2 ? { road: '#444', grass: '#1a1a1a', rumble: '#fff' } : { road: '#333', grass: '#0a0a0a', rumble: '#f00' }
         });
     }
-    segments.forEach((s, i) => s.index = i);
-}
-
-function resetCars() {
+    totalTrackLength = segments.length * segmentLength;
+    
+    // Add some random cars
     cars = [];
-    const carColors = ['#ff0', '#f0f', '#0ff', '#f00', '#00f'];
-    for (let n = 0; n < 200; n++) {
-        const offset = Math.random() * 2 - 1;
-        const z = segmentLength * (10 + n * 40 + Math.random() * 20);
+    for (let n = 0; n < 50; n++) {
+        let posZ = 10000 + Math.random() * (totalTrackLength - 20000);
         cars.push({
-            offset: offset,
-            z: z,
-            color: carColors[n % carColors.length],
-            speed: playerMaxSpeed * (0.3 + Math.random() * 0.2)
+            z: posZ,
+            x: Math.random() * 2 - 1,
+            speed: maxSpeed * (0.3 + Math.random() * 0.3),
+            sprite: assets.obstacle
         });
     }
 }
 
-// --- Projection ---
-function project(p, cameraX, cameraY, cameraZ, cameraDepth, width, height, roadWidth) {
-    p.camera = {
-        x: (p.world.x || 0) - cameraX,
-        y: (p.world.y || 0) - cameraY,
-        z: (p.world.z || 0) - cameraZ
-    };
+// Projection
+function project(p, cameraX, cameraY, cameraZ, canvasWidth, canvasHeight, roadWidth) {
+    p.camera.x = (p.world.x || 0) - cameraX;
+    p.camera.y = (p.world.y || 0) - cameraY;
+    p.camera.z = (p.world.z || 0) - cameraZ;
     p.screen.scale = cameraDepth / p.camera.z;
-    p.screen.x = Math.round((width / 2) + (p.screen.scale * p.camera.x * width / 2));
-    p.screen.y = Math.round((height / 2) - (p.screen.scale * p.camera.y * height / 2));
-    p.screen.w = Math.round(p.screen.scale * roadWidth * width / 2);
+    p.screen.x = Math.round((canvasWidth / 2) + (p.screen.scale * p.camera.x * canvasWidth / 2));
+    p.screen.y = Math.round((canvasHeight / 2) - (p.screen.scale * p.camera.y * canvasHeight / 2));
+    p.screen.w = Math.round(p.screen.scale * roadWidth * canvasWidth / 2);
 }
 
-// --- Rendering Helpers ---
-function drawPolygon(ctx, x1, y1, w1, x2, y2, w2, color) {
+// Rendering Helpers
+function drawPolygon(x1, y1, w1, x2, y2, w2, color) {
     ctx.fillStyle = color;
     ctx.beginPath();
     ctx.moveTo(x1 - w1, y1);
     ctx.lineTo(x2 - w2, y2);
     ctx.lineTo(x2 + w2, y2);
     ctx.lineTo(x1 + w1, y1);
+    ctx.closePath();
     ctx.fill();
 }
 
-function drawAtariCar(ctx, x, y, scale, color) {
-    const w = 200 * scale;
-    const h = 100 * scale;
-    const tireW = 40 * scale;
-    const tireH = 60 * scale;
-
-    ctx.fillStyle = '#000'; // Tires
-    ctx.fillRect(x - w/2 - tireW/2, y - h/2, tireW, tireH);
-    ctx.fillRect(x + w/2 - tireW/2, y - h/2, tireW, tireH);
-    ctx.fillRect(x - w/2 - tireW/2, y + h/2 - tireH, tireW, tireH);
-    ctx.fillRect(x + w/2 - tireW/2, y + h/2 - tireH, tireW, tireH);
-
-    ctx.fillStyle = color; // Body
-    ctx.fillRect(x - w/4, y - h/2, w/2, h);
-    
-    ctx.fillStyle = '#ccc'; // Cockpit
-    ctx.fillRect(x - w/10, y - h/4, w/5, h/4);
-}
-
-// --- Main Loops ---
+// Game Loop
 function update(dt) {
-    if (!gameStarted) {
-        if (keys['Enter']) {
-            gameStarted = true;
-            messageBoard.style.display = 'none';
-        }
-        return;
-    }
+    if (!playing) return;
 
-    totalTime += dt;
-    
-    // Player movement
-    const speedPercent = speed / playerMaxSpeed;
-    const dx = dt * 2 * speedPercent;
+    // Movement logic
+    const playerSegment = segments[Math.floor(cameraZ / segmentLength) % segments.length];
+    const speedPercent = speed / maxSpeed;
 
-    if (keys['ArrowLeft'] || keys['a'] || keys['A']) playerX = playerX - dx;
-    if (keys['ArrowRight'] || keys['d'] || keys['D']) playerX = playerX + dx;
-    playerX = Math.max(-2.5, Math.min(2.5, playerX));
-
-    // Acceleration / Braking
-    if (keys['ArrowUp'] || keys['w'] || keys['W']) speed = accelerate(speed, accel, dt);
-    else if (keys['ArrowDown'] || keys['s'] || keys['S']) speed = accelerate(speed, breaking, dt);
-    else speed = accelerate(speed, decel, dt);
+    // Speed controls
+    if (keys.up) speed += accel * dt;
+    else if (keys.down) speed += breaking * dt;
+    else speed += decel * dt;
 
     // Off-road penalty
-    if ((playerX < -1) || (playerX > 1)) {
-        if (speed > offRoadLimit)
-            speed = accelerate(speed, offRoadDecel, dt);
+    if ((playerX < -1 || playerX > 1) && (speed > offRoadLimit))
+        speed += offRoadDecel * dt;
+
+    speed = Math.max(0, Math.min(speed, maxSpeed));
+
+    // Steering
+    if (keys.left) playerX -= 3 * dt * speedPercent;
+    if (keys.right) playerX += 3 * dt * speedPercent;
+
+    // Curve drag
+    playerX -= (speedPercent * dt * playerSegment.curve * 1.5);
+
+    // Position Update
+    cameraZ += speed * dt;
+    if (cameraZ >= totalTrackLength) {
+        finishGame();
+        return;
     }
 
     // Update cars
     cars.forEach(car => {
-        car.z = car.z + dt * car.speed;
-        if (car.z > playerZ + 200 * segmentLength) car.z -= 5000 * segmentLength;
-        else if (car.z < playerZ - 200 * segmentLength) car.z += 5000 * segmentLength;
+        car.z -= car.speed * dt; // They move towards player or just slower
+        if (car.z < 0) car.z += totalTrackLength;
         
-        // COLLISION
-        if (Math.abs(playerX - car.offset) < 0.5 && Math.abs(playerZ - car.z) < 250) {
-            speed = car.speed / 2;
-            playerZ = car.z - 251;
+        // Collision
+        if (Math.abs(cameraZ - car.z) < segmentLength) {
+            if (Math.abs(playerX - car.x) < 0.5) {
+                speed = speed / 4; // Harsh collision penalty
+                car.z += 1000; // Knock it away
+            }
         }
     });
 
-    playerZ = (playerZ + dt * speed);
-    cameraZ = playerZ - cameraHeight;
-
-    // HUD Update
-    const currentSpeedPercent = (speed / playerMaxSpeed) * 100;
-    speedBar.style.width = currentSpeedPercent + '%';
-    carIcon.style.left = currentSpeedPercent + '%';
-    scoreEl.innerText = Math.floor(playerZ / 100).toString().padStart(5, '0');
-}
-
-function accelerate(v, accel, dt) { return Math.max(0, Math.min(playerMaxSpeed, v + accel * dt)); }
-
-function findSegment(z) {
-    return segments[Math.floor(z / segmentLength) % segments.length];
+    // Update UI
+    speedEl.innerText = Math.floor(speed / 100);
+    const elapsed = (Date.now() - startTime) / 1000;
+    const mins = Math.floor(elapsed / 60).toString().padStart(2, '0');
+    const secs = Math.floor(elapsed % 60).toString().padStart(2, '0');
+    timeEl.innerText = `${mins}:${secs}`;
 }
 
 function render() {
-    // Parallax Background
-    const bgOffset = (playerZ / segmentLength) * 0.1;
-    ctx.drawImage(background, -((bgOffset % 1) * width), 0, width, height / 2);
-    ctx.drawImage(background, width - ((bgOffset % 1) * width), 0, width, height / 2);
+    ctx.clearRect(0, 0, width, height);
 
-    const baseSegment = findSegment(cameraZ);
-    let maxy = height;
+    // Draw Parallax Background
+    const bgOffset = (cameraZ / segmentLength) * 0.1;
+    ctx.drawImage(assets.background, (bgOffset % width), 0, width, height);
+    ctx.drawImage(assets.background, (bgOffset % width) - width, 0, width, height);
 
+    const baseSegment = segments[Math.floor(cameraZ / segmentLength) % segments.length];
+    const basePercent = (cameraZ % segmentLength) / segmentLength;
+    
+    // Draw Road & Sprites (Back to Front)
+    let maxY = height;
+    
+    // First, project all segments needed
+    let projectedSegments = [];
+    let x = 0;
+    let dx = -(baseSegment.curve * basePercent);
+    
     for (let n = 0; n < drawDistance; n++) {
         const segment = segments[(baseSegment.index + n) % segments.length];
-        
-        project(segment.p1, playerX * roadWidth, cameraHeight, cameraZ, cameraDepth, width, height, roadWidth);
-        project(segment.p2, playerX * roadWidth, cameraHeight, cameraZ, cameraDepth, width, height, roadWidth);
+        const looped = segment.index < baseSegment.index;
 
-        if (segment.p1.camera.z <= cameraDepth || segment.p2.screen.y >= maxy) continue;
+        project(segment.p1, playerX * roadWidth - x, cameraHeight, cameraZ - (looped ? totalTrackLength : 0), width, height, roadWidth);
+        project(segment.p2, playerX * roadWidth - x - dx, cameraHeight, cameraZ - (looped ? totalTrackLength : 0), width, height, roadWidth);
 
-        const p1 = segment.p1.screen;
-        const p2 = segment.p2.screen;
+        x += dx;
+        dx += segment.curve;
+        projectedSegments.push(segment);
+    }
+
+    // Now render back to front
+    for (let n = drawDistance - 1; n > 0; n--) {
+        const segment = projectedSegments[n];
+        if (segment.p1.camera.z <= cameraDepth || segment.p1.screen.y >= maxY) continue;
 
         // Draw Grass
         ctx.fillStyle = segment.color.grass;
-        ctx.fillRect(0, p2.y, width, p1.y - p2.y);
+        ctx.fillRect(0, segment.p2.screen.y, width, segment.p1.screen.y - segment.p2.screen.y);
 
         // Draw Rumble
-        drawPolygon(ctx, p1.x, p1.y, p1.w * 1.05, p2.x, p2.y, p2.w * 1.05, segment.color.rumble);
+        const r1 = segment.p1.screen.w / 10;
+        const r2 = segment.p2.screen.w / 10;
+        drawPolygon(segment.p1.screen.x, segment.p1.screen.y, segment.p1.screen.w + r1, segment.p2.screen.x, segment.p2.screen.y, segment.p2.screen.w + r2, segment.color.rumble);
+        
         // Draw Road
-        drawPolygon(ctx, p1.x, p1.y, p1.w, p2.x, p2.y, p2.w, segment.color.road);
+        drawPolygon(segment.p1.screen.x, segment.p1.screen.y, segment.p1.screen.w, segment.p2.screen.x, segment.p2.screen.y, segment.p2.screen.w, segment.color.road);
 
-        maxy = p2.y;
+        // Update maxY to avoid drawing over near segments
+        maxY = segment.p1.screen.y;
     }
 
-    // Render Sprites
-    for (let n = drawDistance - 1; n > 0; n--) {
-        const segment = segments[(baseSegment.index + n) % segments.length];
-        cars.forEach(car => {
-            if (findSegment(car.z) === segment) {
-                const scale = segment.p1.screen.scale;
-                const destX = segment.p1.screen.x + (scale * car.offset * roadWidth * width / 2);
-                const destY = segment.p1.screen.y;
-                drawAtariCar(ctx, destX, destY, scale * 5, car.color);
-            }
-        });
-    }
+    // Draw Cars at their respective Z (Simple back-to-front for cars)
+    cars.sort((a, b) => b.z - a.z);
+    cars.forEach(car => {
+        if (car.z > cameraZ && car.z < cameraZ + drawDistance * segmentLength) {
+            const scale = cameraDepth / (car.z - cameraZ);
+            const carX = width / 2 + (scale * (car.x * roadWidth - playerX * roadWidth) * width / 2);
+            // Height calculation based on cameraHeight and distance
+            const carY = height / 2 - (scale * (cameraHeight - 500) * height / 2); // 500 is half car height roughly
+            const carW = scale * 1500 * (width / 2);
+            const carH = carW * 0.6;
+            
+            ctx.drawImage(assets.obstacle, carX - carW / 2, carY - carH, carW, carH);
+        }
+    });
 
-    // Render Player
-    drawAtariCar(ctx, width / 2, height - 100, 1.5, '#eee');
+
+    // Draw Player
+    const playerScale = cameraDepth / cameraDepth; // Fixed at front
+    const pW = 200;
+    const pH = 120;
+    ctx.drawImage(assets.player, (width / 2) - (pW / 2), height - pH - 20, pW, pH);
 }
 
-// --- Game Initialization ---
-function init() {
-    canvas.width = width;
-    canvas.height = height;
-    
+let lastTime = Date.now();
+function frame() {
+    const now = Date.now();
+    const dt = Math.min(1, (now - lastTime) / 1000);
+    update(dt);
+    render();
+    lastTime = now;
+    requestAnimationFrame(frame);
+}
+
+function startGame() {
     resetRoad();
-    resetCars();
-
-    window.addEventListener('keydown', e => keys[e.key] = true);
-    window.addEventListener('keyup', e => keys[e.key] = false);
-
-    let last = Date.now();
-    function frame() {
-        const now = Date.now();
-        const dt = Math.min(1, (now - last) / 1000);
-        update(dt);
-        render();
-        last = now;
-        requestAnimationFrame(frame);
-    }
-    frame();
+    cameraZ = 0;
+    playerX = 0;
+    speed = 0;
+    startTime = Date.now();
+    playing = true;
+    startScreen.classList.add('hidden');
+    gameOverScreen.classList.add('hidden');
 }
 
-init();
+function finishGame() {
+    playing = false;
+    gameFinished = true;
+    finalTimeEl.innerText = timeEl.innerText;
+    gameOverScreen.classList.remove('hidden');
+}
+
+startBtn.addEventListener('click', startGame);
+restartBtn.addEventListener('click', startGame);
+
+// Start
+resetRoad();
+frame();

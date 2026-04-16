@@ -1,14 +1,13 @@
 {
-  "name": "retro-gp-pseudo-3d",
-  "private": true,
-  "version": "0.0.0",
-  "type": "module",
+  "name": "retro-gp-atari",
+  "version": "1.0.0",
+  "description": "Retro GP Pseudo-3D Racing Game",
+  "main": "main.js",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
+    "start": "npx serve .",
+    "dev": "npx serve ."
   },
-  "devDependencies": {
-    "vite": "^5.0.0"
-  }
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
 }
