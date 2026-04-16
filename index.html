@@ -3,69 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Retro GP - Um jogo de corrida pseudo-3D inspirado no clássico Atari Grand Prix.">
-    <title>Retro GP | Atari Style Pseudo-3D Racing</title>
+    <title>Retro GP - Atari Style</title>
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Outfit:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 </head>
 <body>
     <div id="game-container">
-        <!-- Background Layers for Parallax -->
-        <div id="background">
-            <div id="sky" class="layer"></div>
-            <div id="mountains" class="layer"></div>
-            <div id="horizon" class="layer"></div>
+        <canvas id="gameCanvas"></canvas>
+        
+        <div id="overlay" class="screen">
+            <h1 class="glitch">RETRO GP</h1>
+            <div class="controls-info">
+                <p>CONTROLES:</p>
+                <ul>
+                    <li><span>W</span> - ACELERAR</li>
+                    <li><span>S</span> - FREAR</li>
+                    <li><span>A</span> - ESQUERDA</li>
+                    <li><span>D</span> - DIREITA</li>
+                    <li><span>ENTER</span> - START</li>
+                </ul>
+            </div>
+            <p class="blink">PRESSIONE ENTER PARA COMECAR</p>
         </div>
 
-        <canvas id="gameCanvas"></canvas>
+        <div id="game-over" class="screen hidden">
+            <h1>FIM DE JOGO</h1>
+            <p id="final-score">TEMPO: 00:00</p>
+            <p class="blink">PRESSIONE ENTER PARA REINICIAR</p>
+        </div>
 
-        <!-- Overlay for UI -->
-        <div id="ui-overlay">
-            <!-- Start Screen -->
-            <div id="start-screen" class="screen show">
-                <h1 class="glitch-text" data-text="RETRO GP">RETRO GP</h1>
-                <div class="instructions">
-                    <p>Pressione <span class="highlight">ENTER</span> para Iniciar</p>
-                    <div class="controls-grid">
-                        <div class="control-item"><span>W</span> Acelerar</div>
-                        <div class="control-item"><span>S</span> Frear</div>
-                        <div class="control-item"><span>A</span> Esquerda</div>
-                        <div class="control-item"><span>D</span> Direita</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- HUD -->
-            <div id="hud" class="hidden">
-                <div class="hud-item">
-                    <span class="label">VELOCIDADE</span>
-                    <span id="speed-val">0</span> <span class="unit">KM/H</span>
-                </div>
-                <div class="hud-item title">
-                    RETRO GP
-                </div>
-                <div class="hud-item">
-                    <span class="label">TEMPO</span>
-                    <span id="time-val">00:00.00</span>
-                </div>
-                <div id="distance-bar">
-                    <div id="distance-progress"></div>
-                </div>
-            </div>
-
-            <!-- Game Over Screen -->
-            <div id="game-over-screen" class="screen hidden">
-                <h2>CORRIDA CONCLUÍDA!</h2>
-                <div class="stats">
-                    <p>TEMPO FINAL: <span id="final-time">00:00.00</span></p>
-                </div>
-                <p class="blink">Pressione ENTER para Jogar Novamente</p>
-            </div>
+        <div id="hud" class="hidden">
+            <div class="stat">TEMPO: <span id="timer">00:00</span></div>
+            <div class="stat">VEL: <span id="speed">0</span> MPH</div>
         </div>
     </div>
-
     <script src="main.js"></script>
 </body>
 </html>

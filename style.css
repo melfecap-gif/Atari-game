@@ -1,13 +1,3 @@
-:root {
-    --neon-pink: #ff007f;
-    --neon-blue: #00f2ff;
-    --neon-purple: #bc13fe;
-    --dark-bg: #0d0221;
-    --text-white: #ffffff;
-    --atari-red: #e02820;
-    --atari-green: #30c040;
-}
-
 * {
     margin: 0;
     padding: 0;
@@ -15,14 +5,14 @@
 }
 
 body {
-    background-color: var(--dark-bg);
-    color: var(--text-white);
-    font-family: 'Outfit', sans-serif;
-    overflow: hidden;
-    height: 100vh;
+    background-color: #000;
+    color: #fff;
+    font-family: 'Press Start 2P', cursive;
     display: flex;
     justify-content: center;
     align-items: center;
+    height: 100vh;
+    overflow: hidden;
 }
 
 #game-container {
@@ -30,269 +20,106 @@ body {
     width: 640px;
     height: 480px;
     background: #000;
-    border: 4px solid #333;
-    box-shadow: 0 0 50px rgba(0, 0, 0, 0.8), 0 0 20px rgba(188, 19, 254, 0.2);
-    image-rendering: pixelated;
-    overflow: hidden;
+    border: 4px solid #fff;
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
 }
 
 canvas {
-    position: absolute;
-    top: 0;
-    left: 0;
     width: 100%;
     height: 100%;
-    z-index: 5;
-}
-
-/* Background/Parallax Layers */
-#background {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 1;
-}
-
-.layer {
-    position: absolute;
-    width: 100%;
-    background-repeat: repeat-x;
-}
-
-#sky {
-    height: 60%;
-    background: linear-gradient(to bottom, #050110 0%, #200b30 50%, #4a154b 100%);
-    position: relative;
-    overflow: hidden;
-}
-
-#sky::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 200%;
-    height: 100px;
-    background-image: 
-        linear-gradient(rgba(188, 19, 254, 0.2) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(188, 19, 254, 0.2) 1px, transparent 1px);
-    background-size: 50px 50px;
-    transform: perspective(100px) rotateX(60deg) translateX(-25%);
-    mask-image: linear-gradient(to top, rgba(0,0,0,1), transparent);
-}
-
-#mountains {
-    top: 40%;
-    height: 20%;
-    background: linear-gradient(transparent, #1a0633);
-    opacity: 0.8;
-}
-
-/* UI Overlay */
-#ui-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 10;
-    pointer-events: none;
+    display: block;
+    image-rendering: pixelated;
 }
 
 .screen {
     position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
+    background: rgba(0, 0, 0, 0.8);
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    background: rgba(13, 2, 33, 0.8);
-    backdrop-filter: blur(5px);
-    transition: opacity 0.5s ease;
-}
-
-.hidden {
-    opacity: 0;
-    display: none !important;
-}
-
-.show {
-    opacity: 1;
-}
-
-/* Typography */
-h1 {
-    font-family: 'Press Start 2P', cursive;
-    font-size: 3rem;
-    color: var(--neon-blue);
-    margin-bottom: 2rem;
-    text-shadow: 3px 3px var(--neon-pink), -2px -2px var(--neon-purple);
-}
-
-.instructions {
+    z-index: 10;
     text-align: center;
 }
 
-.instructions p {
-    font-family: 'Press Start 2P', cursive;
-    font-size: 0.8rem;
-    margin-bottom: 2rem;
-    color: var(--text-white);
+.hidden {
+    display: none !important;
 }
 
-.highlight {
-    color: var(--neon-pink);
-    animation: blink 0.8s infinite;
+h1 {
+    font-size: 40px;
+    margin-bottom: 30px;
+    color: #ff00ff;
+    text-shadow: 2px 2px #00ffff;
 }
 
-.controls-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 15px;
-    max-width: 300px;
-    margin: 0 auto;
+.controls-info {
+    margin-bottom: 40px;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 20px;
+    border: 2px solid #fff;
 }
 
-.control-item {
-    font-size: 0.9rem;
-    text-transform: uppercase;
-    letter-spacing: 1px;
+.controls-info p {
+    margin-bottom: 15px;
+    color: #00ffff;
 }
 
-.control-item span {
-    display: inline-block;
-    width: 30px;
-    height: 30px;
-    line-height: 28px;
-    border: 2px solid var(--neon-blue);
-    border-radius: 4px;
-    margin-right: 8px;
-    font-weight: bold;
-    color: var(--neon-blue);
+.controls-info ul {
+    list-style: none;
+    text-align: left;
 }
 
-/* HUD */
-#hud {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    padding: 15px 25px;
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    font-family: 'Press Start 2P', cursive;
-    font-size: 0.6rem;
-    color: var(--text-white);
-    background: linear-gradient(to bottom, rgba(0,0,0,0.7), transparent);
+.controls-info li {
+    font-size: 14px;
+    margin: 10px 0;
 }
 
-.hud-item {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-}
-
-.hud-item.title {
-    font-size: 1rem;
-    color: var(--neon-pink);
-    text-shadow: 2px 2px #000;
-}
-
-.label {
-    color: rgba(255, 255, 255, 0.5);
-    font-size: 0.5rem;
-}
-
-#speed-val {
-    font-size: 1.2rem;
-    color: var(--neon-blue);
-}
-
-#time-val {
-    font-size: 1.2rem;
-    color: var(--neon-pink);
-}
-
-#distance-bar {
-    position: absolute;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 80%;
-    height: 6px;
-    background: rgba(255,255,255,0.1);
-    border-radius: 3px;
-    overflow: hidden;
-}
-
-#distance-progress {
-    height: 100%;
-    width: 0%;
-    background: linear-gradient(to right, var(--neon-blue), var(--neon-pink));
-    box-shadow: 0 0 10px var(--neon-pink);
-    transition: width 0.1s linear;
-}
-
-/* Animations */
-@keyframes blink {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.3; }
+.controls-info span {
+    color: #ff00ff;
 }
 
 .blink {
     animation: blink 1s infinite;
-    font-family: 'Press Start 2P', cursive;
-    font-size: 0.7rem;
-    margin-top: 2rem;
 }
 
-/* Glitch Effect for Title */
-.glitch-text {
-    position: relative;
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
 }
 
-.glitch-text::before,
-.glitch-text::after {
-    content: attr(data-text);
+#hud {
+    position: absolute;
+    top: 10px;
+    left: 0;
+    width: 100%;
+    padding: 0 20px;
+    display: flex;
+    justify-content: space-between;
+    pointer-events: none;
+    z-index: 5;
+}
+
+.stat {
+    font-size: 16px;
+    color: #fff;
+    text-shadow: 2px 2px #000;
+}
+
+/* Retro Scanline effect */
+#game-container::after {
+    content: "";
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-}
-
-.glitch-text::before {
-    left: 2px;
-    text-shadow: -2px 0 var(--neon-pink);
-    clip: rect(44px, 450px, 56px, 0);
-    animation: glitch-anim 5s infinite linear alternate-reverse;
-}
-
-.glitch-text::after {
-    left: -2px;
-    text-shadow: -2px 0 var(--neon-blue);
-    clip: rect(44px, 450px, 56px, 0);
-    animation: glitch-anim-2 5s infinite linear alternate-reverse;
-}
-
-@keyframes glitch-anim {
-    0% { clip: rect(31px, 9999px, 94px, 0); }
-    20% { clip: rect(62px, 9999px, 42px, 0); }
-    40% { clip: rect(10px, 9999px, 78px, 0); }
-    60% { clip: rect(50px, 9999px, 13px, 0); }
-    80% { clip: rect(85px, 9999px, 40px, 0); }
-    100% { clip: rect(20px, 9999px, 60px, 0); }
-}
-
-@keyframes glitch-anim-2 {
-    0% { clip: rect(65px, 9999px, 100px, 0); }
-    20% { clip: rect(12px, 9999px, 58px, 0); }
-    40% { clip: rect(82px, 9999px, 25px, 0); }
-    60% { clip: rect(40px, 9999px, 90px, 0); }
-    80% { clip: rect(15px, 9999px, 45px, 0); }
-    100% { clip: rect(70px, 9999px, 30px, 0); }
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+    background-size: 100% 4px, 3px 100%;
+    pointer-events: none;
+    z-index: 20;
 }
