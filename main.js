@@ -34,13 +34,13 @@ const COLORS = {
 // --- Game State ---
 let playerX = 0; // -1 to 1 (left to right)
 let position = 0; // current distance down the road
-let speed = 0;
-let maxSpeed = SEGMENT_LENGTH / STEP;
-let accel = maxSpeed / 5;
-let breaking = -maxSpeed;
-let decel = -maxSpeed / 5;
-let offRoadDecel = -maxSpeed / 2;
-let offRoadLimit = maxSpeed / 4;
+let speed = 0; // Current speed
+let maxSpeed = 12000; 
+let accel = maxSpeed / 4; 
+let breaking = -maxSpeed; 
+let decel = -maxSpeed / 100; // Extremely slow deceleration (momentum)
+let offRoadDecel = -maxSpeed / 4;
+let offRoadLimit = maxSpeed / 3;
 
 let segments = [];
 let totalLength = 0;
@@ -116,10 +116,17 @@ function resetRoad() {
     addRoad(100, 100, 100, 0, -5);
     addRoad(200, 200, 200, 0, 0); // final stretch
     
-    segments[findSegment(200).index].color = COLORS.START;
-    segments[findSegment(400).index].color = COLORS.START;
-    
     totalLength = segments.length * SEGMENT_LENGTH;
+    
+    // Start line (White)
+    for(let n=0; n<RUMBLE_LENGTH; n++) segments[n].color = COLORS.START;
+    
+    // Finish line (Chequered pattern - Black/White)
+    let finishBase = segments.length - 100;
+    for(let n=0; n<20; n++) {
+        segments[finishBase + n].color = (n % 2 === 0) ? COLORS.START : COLORS.FINISH;
+    }
+
     resetCars();
 }
 
@@ -329,33 +336,36 @@ function drawCar(car, segment) {
     let scale = segment.p1.screen.scale;
     let destX = segment.p1.screen.x + (scale * car.offset * ROAD_WIDTH * width / 2);
     let destY = segment.p1.screen.y;
-    let w = 450 * scale * width / 2;
-    let h = 220 * scale * width / 2;
+    let w = 550 * scale * width / 2; // Much wider
+    let h = 280 * scale * width / 2; // Much taller
     
-    // Ensure minimum size for distant cars to make them "apparent"
-    if (w < 4) w = 4;
-    if (h < 2) h = 2;
+    if (w < 6) w = 6;
+    if (h < 3) h = 3;
 
-    // Black outline for high contrast
+    // Thick Black Outline
     ctx.strokeStyle = '#000';
-    ctx.lineWidth = Math.max(1, 2 * scale * width / 640);
+    ctx.lineWidth = Math.max(2, 6 * scale * width / 640);
     
-    // Main Body
+    // Main Body (Vibrant)
     ctx.fillStyle = car.color || '#00f'; 
     ctx.fillRect(destX - w/2, destY - h, w, h);
     ctx.strokeRect(destX - w/2, destY - h, w, h);
     
-    // Black wheels on sides (Larger)
-    ctx.fillStyle = '#000';
-    ctx.fillRect(destX - w/2 - w/12, destY - h * 0.8, w/10, h * 0.7);
-    ctx.fillRect(destX + w/2, destY - h * 0.8, w/10, h * 0.7);
+    // Top Glint (White line)
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(destX - w/2 + 3, destY - h + 3, w - 6, h/4);
 
-    // Tail lights (Bright red)
-    if (h > 5) { // Only draw if car is close enough
-        ctx.fillStyle = '#FF0000';
-        ctx.fillRect(destX - w/2 + 2, destY - h + 2, w/6, h/4);
-        ctx.fillRect(destX + w/2 - w/6 - 2, destY - h + 2, w/6, h/4);
-    }
+    // Large Black Wheels
+    ctx.fillStyle = '#000';
+    let wheelW = w / 4;
+    let wheelH = h / 2;
+    ctx.fillRect(destX - w/2 - wheelW/2, destY - h * 0.8, wheelW, wheelH);
+    ctx.fillRect(destX + w/2 - wheelW/2, destY - h * 0.8, wheelW, wheelH);
+
+    // Bright Tail Lights (Always visible)
+    ctx.fillStyle = '#FF0000';
+    ctx.fillRect(destX - w/2 + 2, destY - h + 2, w/4, h/4);
+    ctx.fillRect(destX + w/2 - w/4 - 2, destY - h + 2, w/4, h/4);
 }
 
 function drawPlayer() {
