@@ -257,14 +257,15 @@ function update(dt) {
     // Collision
     playerSegment.cars.forEach(car => {
         if (speed > car.speed) {
-            if (Math.abs(playerX - car.offset) < 0.3) {
+            if (Math.abs(playerX - car.offset) < 0.25) { // Tighter collision
                 speed = car.speed * 0.5;
-                position = car.z - (CAMERA_HEIGHT * 2); // knock back slightly
+                position = car.z - (CAMERA_HEIGHT * 2); 
             }
         }
     });
 
-    playerX = Math.max(-2, Math.min(2, playerX));
+    // Clamp playerX to avoid leaving the screen view
+    playerX = Math.max(-1.8, Math.min(1.8, playerX));
 }
 
 function finishGame() {
@@ -384,61 +385,101 @@ function drawCar(car, segment) {
     let scale = segment.p1.screen.scale;
     let destX = segment.p1.screen.x + (scale * car.offset * ROAD_WIDTH * width / 2);
     let destY = segment.p1.screen.y;
-    let w = 550 * scale * width / 2; // Much wider
-    let h = 280 * scale * width / 2; // Much taller
+    let w = 550 * scale * width / 2;
+    let h = 280 * scale * width / 2;
     
-    if (w < 6) w = 6;
-    if (h < 3) h = 3;
+    if (w < 4) w = 4;
+    if (h < 2) h = 2;
 
-    // Thick Black Outline
-    ctx.strokeStyle = '#000';
-    ctx.lineWidth = Math.max(2, 6 * scale * width / 640);
-    
-    // Main Body (Vibrant)
+    // Cuboid 3D Effect Factors
+    let depth = h * 0.5; 
+    let sideOffset = (car.offset - playerX) * w * 0.5;
+
+    // 1. Back Face (Main body)
     ctx.fillStyle = car.color || '#00f'; 
     ctx.fillRect(destX - w/2, destY - h, w, h);
-    ctx.strokeRect(destX - w/2, destY - h, w, h);
     
-    // Top Glint (White line)
-    ctx.fillStyle = '#FFFFFF';
-    ctx.fillRect(destX - w/2 + 3, destY - h + 3, w - 6, h/4);
+    // 2. Top Face (Depth towards horizon)
+    ctx.fillStyle = shadeColor(ctx.fillStyle, -20);
+    ctx.beginPath();
+    ctx.moveTo(destX - w/2,         destY - h);
+    ctx.lineTo(destX + w/2,         destY - h);
+    ctx.lineTo(destX + w/2 - depth, destY - h - depth);
+    ctx.lineTo(destX - w/2 + depth, destY - h - depth);
+    ctx.fill();
 
-    // Large Black Wheels
-    ctx.fillStyle = '#000';
-    let wheelW = w / 4;
-    let wheelH = h / 2;
-    ctx.fillRect(destX - w/2 - wheelW/2, destY - h * 0.8, wheelW, wheelH);
-    ctx.fillRect(destX + w/2 - wheelW/2, destY - h * 0.8, wheelW, wheelH);
+    // 3. Side Face (Visible based on car.offset relative to player)
+    ctx.fillStyle = shadeColor(car.color || '#00f', -40);
+    ctx.beginPath();
+    if (sideOffset > 0) { // Right side visible
+        ctx.moveTo(destX + w/2,         destY);
+        ctx.lineTo(destX + w/2,         destY - h);
+        ctx.lineTo(destX + w/2 - depth, destY - h - depth);
+        ctx.lineTo(destX + w/2 - depth, destY - depth);
+    } else { // Left side visible
+        ctx.moveTo(destX - w/2,         destY);
+        ctx.lineTo(destX - w/2,         destY - h);
+        ctx.lineTo(destX - w/2 + depth, destY - h - depth);
+        ctx.lineTo(destX - w/2 + depth, destY - depth);
+    }
+    ctx.fill();
 
-    // Bright Tail Lights (Always visible)
+    // 4. Black Outline
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = Math.max(1, 2 * scale * width / 640);
+    ctx.strokeRect(destX - w/2, destY - h, w, h);
+
+    // 5. Features (Tail lights)
     ctx.fillStyle = '#FF0000';
     ctx.fillRect(destX - w/2 + 2, destY - h + 2, w/4, h/4);
     ctx.fillRect(destX + w/2 - w/4 - 2, destY - h + 2, w/4, h/4);
 }
 
+function shadeColor(color, percent) {
+    let num = parseInt(color.replace("#",""),16),
+    amt = Math.round(2.55 * percent),
+    R = (num >> 16) + amt,
+    G = (num >> 8 & 0x00FF) + amt,
+    B = (num & 0x0000FF) + amt;
+    return "#" + (0x1000000 + (R<255?R<0?0:R:255)*0x10000 + (G<255?G<0?0:G:255)*0x100 + (B<255?B<0?0:B:255)).toString(16).slice(1);
+}
+
 function drawPlayer() {
-    let w = 90;
-    let h = 45;
-    // Camera is following the car, so we keep the car centered horizontally
+    let w = 110;
+    let h = 55;
     let x = width / 2; 
-    let y = height - 30;
+    let y = height - 20;
 
-    // Wheels (Atari blocky style)
-    ctx.fillStyle = '#000';
-    ctx.fillRect(x - w/2 - 10, y - h + 5, 10, 30); // Front Left
-    ctx.fillRect(x + w/2, y - h + 5, 10, 30);     // Front Right
+    // 3D Player Car Effect
+    let depth = 15;
+    let tilt = playerX * 10;
 
-    // Main body
-    ctx.fillStyle = '#B300B3'; // Purple
-    ctx.fillRect(x - w/2, y - h, w, h);
+    // 1. Bottom/Sides
+    ctx.fillStyle = shadeColor('#B300B3', -40);
+    ctx.beginPath();
+    ctx.moveTo(x - w/2, y);
+    ctx.lineTo(x + w/2, y);
+    ctx.lineTo(x + w/2 + tilt, y - depth);
+    ctx.lineTo(x - w/2 + tilt, y - depth);
+    ctx.fill();
+
+    // 2. Main Body
+    ctx.fillStyle = '#B300B3';
+    ctx.fillRect(x - w/2 + tilt, y - h - depth, w, h);
     
-    // Cockpit
-    ctx.fillStyle = '#FFD700'; // Yellow/Gold detail
-    ctx.fillRect(x - w/6, y - h - 5, w/3, 10);
+    // 3. Cockpit/Yellow Detail
+    ctx.fillStyle = '#FFD700';
+    ctx.fillRect(x - w/6 + tilt, y - h - depth - 5, w/3, 10);
     
-    // Center stripe
+    // 4. Black Tires (Apparent)
     ctx.fillStyle = '#000';
-    ctx.fillRect(x - 2, y - h, 4, h);
+    ctx.fillRect(x - w/2 + tilt - 10, y - h - depth + 10, 15, 35);
+    ctx.fillRect(x + w/2 + tilt - 5,  y - h - depth + 10, 15, 35);
+
+    // 5. Outline
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(x - w/2 + tilt, y - h - depth, w, h);
 }
 
 // --- Game Loop ---
