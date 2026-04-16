@@ -73,6 +73,7 @@ function project(p, cameraX, cameraY, cameraZ, cameraDepth, width, height, roadW
     p.camera.y     = (p.world.y || 0) - cameraY;
     p.camera.z     = (p.world.z || 0) - cameraZ;
     p.screen.scale = cameraDepth / p.camera.z;
+    // Reduce cameraX influence here to make the car move more and road move less
     p.screen.x     = Math.round((width / 2)  + (p.screen.scale * p.camera.x  * width / 2));
     p.screen.y     = Math.round((height / 2) - (p.screen.scale * p.camera.y  * height / 2));
     p.screen.w     = Math.round((p.screen.scale * roadWidth   * width / 2));
@@ -154,6 +155,7 @@ function startGame() {
     document.getElementById('overlay').classList.add('hidden');
     document.getElementById('game-over').classList.add('hidden');
     document.getElementById('hud').classList.remove('hidden');
+    document.getElementById('minimap').classList.remove('hidden');
     
     position = 0;
     speed = 0;
@@ -178,6 +180,11 @@ function update(dt) {
 
     position = (position + speed * dt);
     
+    // Update map
+    let mapPercent = position / totalLength;
+    document.getElementById('map-player').style.bottom = (mapPercent * 142) + 'px';
+    document.getElementById('map-player').style.left = (46 + playerX * 20) + 'px';
+
     // Check finish line
     if (position >= totalLength - (DRAW_DISTANCE * SEGMENT_LENGTH)) {
         finishGame();
@@ -227,6 +234,7 @@ function finishGame() {
     gameActive = false;
     gameFinished = true;
     document.getElementById('game-over').classList.remove('hidden');
+    document.getElementById('minimap').classList.add('hidden');
     document.getElementById('final-score').innerText = "TEMPO: " + timer.toFixed(2) + "s";
 }
 
@@ -258,8 +266,11 @@ function draw() {
         let segment = segments[(baseSegment.index + n) % segments.length];
         segment.looped = segment.index < baseSegment.index;
         
-        project(segment.p1, (playerX * ROAD_WIDTH) - x,      CAMERA_HEIGHT, position - (segment.looped ? totalLength : 0), CAMERA_DEPTH, width, height, ROAD_WIDTH);
-        project(segment.p2, (playerX * ROAD_WIDTH) - x - dx, CAMERA_HEIGHT, position - (segment.looped ? totalLength : 0), CAMERA_DEPTH, width, height, ROAD_WIDTH);
+        // Use partial playerX for camera to allow car to move across screen
+        let camX = playerX * ROAD_WIDTH * 0.5; 
+        
+        project(segment.p1, camX - x,      CAMERA_HEIGHT, position - (segment.looped ? totalLength : 0), CAMERA_DEPTH, width, height, ROAD_WIDTH);
+        project(segment.p2, camX - x - dx, CAMERA_HEIGHT, position - (segment.looped ? totalLength : 0), CAMERA_DEPTH, width, height, ROAD_WIDTH);
 
         x = x + dx;
         dx = dx + segment.curve;
@@ -371,7 +382,8 @@ function drawCar(car, segment) {
 function drawPlayer() {
     let w = 90;
     let h = 45;
-    let x = width / 2;
+    // Move the player car sprite horizontally based on playerX
+    let x = width / 2 + (playerX * width / 2.5); 
     let y = height - 30;
 
     // Wheels (Atari blocky style)

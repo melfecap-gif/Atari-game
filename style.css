@@ -104,10 +104,25 @@ h1 {
     z-index: 5;
 }
 
-.stat {
-    font-size: 16px;
-    color: #fff;
-    text-shadow: 2px 2px #000;
+#minimap {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    width: 100px;
+    height: 150px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 2px solid #fff;
+    z-index: 5;
+}
+
+#map-player {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background: #ff00ff;
+    border: 1px solid #fff;
+    bottom: 0;
+    left: 46px;
 }
 
 /* Retro Scanline effect */
