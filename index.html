@@ -13,15 +13,25 @@
     <div id="game-container">
         <canvas id="gameCanvas"></canvas>
         <div id="hud">
-            <div class="stat">
-                <span class="label">SPEED</span>
-                <span id="speedValue" class="value">0</span> <span class="unit">KM/H</span>
+            <div id="atari-hud">
+                <div class="score-row">
+                    <span id="scoreValue">00000</span>
+                </div>
+                <div class="speed-row">
+                    <div id="speedBar"></div>
+                    <div id="carIcon">🏁</div>
+                </div>
             </div>
-            <div class="stat">
-                <span class="label">TIME</span>
-                <span id="timeValue" class="value">00:00:00</span>
+        </div>
+        <div id="messageBoard">
+            <h1>RETRO GP</h1>
+            <p>PRESS [ENTER] TO START</p>
+            <div class="controls">
+                <div>[↑][↓][←][→]</div>
+                <div>OR</div>
+                <div>[W][S][A][D]</div>
+                <span>TO DRIVE</span>
             </div>
-            <div id="messageBoard">PRESS START TO RACE</div>
         </div>
     </div>
     <script type="module" src="./main.js"></script>

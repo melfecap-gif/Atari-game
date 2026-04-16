@@ -14,7 +14,7 @@ O jogo utiliza o conceito de **Scanline Road (Estrada Escaneada)** para simular 
 1. **Acelerar:** `Seta para Cima` ou `W`
 2. **Frear:** `Seta para Baixo` ou `S`
 3. **Mover:** `Setas Esquerda/Direita` ou `A/D`
-4. **Iniciar:** Pressione `ENTER` ou `ESPAÇO`
+4. **Iniciar:** Pressione `ENTER`
 
 ## 🛠️ Tecnologias Utilizadas
 - **Linguagem:** JavaScript (ES6+)

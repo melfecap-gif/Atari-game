@@ -1,8 +1,8 @@
 :root {
-    --neon-pink: #ff00ff;
-    --neon-cyan: #00ffff;
-    --neon-purple: #bc13fe;
-    --dark-bg: #050510;
+    --atari-red: #800000;
+    --atari-brown: #a0522d;
+    --atari-blue: #000080;
+    --atari-green: #006400;
 }
 
 * {
@@ -12,9 +12,9 @@
 }
 
 body {
-    background-color: var(--dark-bg);
+    background-color: #000;
     color: white;
-    font-family: 'Orbitron', sans-serif;
+    font-family: 'Press Start 2P', cursive;
     overflow: hidden;
     display: flex;
     justify-content: center;
@@ -26,76 +26,108 @@ body {
     position: relative;
     width: 100vw;
     height: 100vh;
-    max-width: 1200px;
-    max-height: 800px;
-    border: 4px solid var(--neon-pink);
-    box-shadow: 0 0 20px var(--neon-pink), inset 0 0 20px var(--neon-pink);
+    max-width: 1024px;
+    max-height: 768px;
+    border: 10px solid #222;
     overflow: hidden;
+    background: var(--atari-blue);
 }
 
 canvas {
     width: 100%;
     height: 100%;
     display: block;
-    image-rendering: pixelated;
+    image-rendering: crisp-edges;
 }
 
 #hud {
     position: absolute;
-    top: 20px;
-    left: 20px;
-    right: 20px;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 400px;
+    height: 120px;
+    background: var(--atari-red);
+    border: 4px solid #000;
+    padding: 10px;
     display: flex;
-    justify-content: space-between;
-    pointer-events: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
 }
 
-.stat {
-    background: rgba(0, 0, 0, 0.7);
-    padding: 10px 20px;
-    border-left: 5px solid var(--neon-cyan);
-    backdrop-filter: blur(5px);
+#atari-hud {
+    width: 100%;
+    background: var(--atari-brown);
+    border: 4px solid #000;
+    padding: 10px;
+    text-align: center;
 }
 
-.label {
-    display: block;
-    font-size: 0.8rem;
-    color: var(--neon-cyan);
-    margin-bottom: 5px;
-    letter-spacing: 2px;
+.score-row {
+    font-size: 2rem;
+    color: #000;
+    margin-bottom: 10px;
 }
 
-.value {
-    font-family: 'Press Start 2P', cursive;
-    font-size: 1.5rem;
-    color: #fff;
-    text-shadow: 0 0 10px var(--neon-cyan);
+.speed-row {
+    position: relative;
+    width: 100%;
+    height: 20px;
+    background: #000;
+    display: flex;
+    align-items: center;
 }
 
-.unit {
-    font-size: 0.7rem;
-    color: #ccc;
+#speedBar {
+    height: 100%;
+    background: #ffa500;
+    width: 0%;
+}
+
+#carIcon {
+    position: absolute;
+    top: -5px;
+    left: 0;
+    font-size: 1.2rem;
 }
 
 #messageBoard {
     position: absolute;
-    top: 50%;
+    top: 30%;
     left: 50%;
     transform: translate(-50%, -50%);
-    font-family: 'Press Start 2P', cursive;
-    font-size: 2rem;
-    color: var(--neon-pink);
-    text-shadow: 4px 4px var(--neon-purple);
+    background: rgba(0, 0, 0, 0.8);
+    padding: 30px;
+    border: 4px solid #fff;
     text-align: center;
+    z-index: 100;
+}
+
+#messageBoard h1 {
+    font-size: 2.5rem;
+    margin-bottom: 20px;
+    color: #ff0;
+}
+
+#messageBoard p {
+    font-size: 1rem;
+    margin-bottom: 30px;
     animation: blink 1s infinite;
+}
+
+.controls {
+    font-size: 0.8rem;
+    color: #aaa;
+}
+
+.controls div {
+    margin: 10px 0;
+    font-size: 1.2rem;
+    color: #fff;
 }
 
 @keyframes blink {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.3; }
-}
-
-@media (max-width: 600px) {
-    .value { font-size: 1rem; }
-    #messageBoard { font-size: 1rem; }
 }
