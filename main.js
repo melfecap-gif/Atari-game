@@ -10,7 +10,7 @@ canvas.height = height;
 // --- Game Constants ---
 const FPS = 60;
 const STEP = 1 / FPS;
-const ROAD_WIDTH = 2000;
+const ROAD_WIDTH = 3000; // Increased for better visible range
 const SEGMENT_LENGTH = 200;
 const RUMBLE_LENGTH = 3;
 const LANES = 3;
@@ -222,8 +222,8 @@ function update(dt) {
         document.getElementById('map-player').style.top = (point.y - 4) + 'px';
     }
 
-    // Check finish line
-    if (position >= totalLength - (DRAW_DISTANCE * SEGMENT_LENGTH)) {
+    // Check finish line (Now trigger AFTER passing it)
+    if (position >= totalLength - (10 * SEGMENT_LENGTH)) { // Wait until near absolute end
         finishGame();
         return;
     }
@@ -271,9 +271,13 @@ function update(dt) {
 function finishGame() {
     gameActive = false;
     gameFinished = true;
-    document.getElementById('game-over').classList.remove('hidden');
-    document.getElementById('minimap').classList.add('hidden');
-    document.getElementById('final-score').innerText = "TEMPO: " + timer.toFixed(2) + "s";
+    
+    // Show game over after a small delay to see the crossing
+    setTimeout(() => {
+        document.getElementById('game-over').classList.remove('hidden');
+        document.getElementById('minimap').classList.add('hidden');
+        document.getElementById('final-score').innerText = "TEMPO: " + timer.toFixed(2) + "s";
+    }, 1000); 
 }
 
 let mountainOffset = 0;
@@ -292,8 +296,8 @@ function draw() {
     // Draw Parallax Mountains
     drawMountains(mountainOffset);
 
-    // Camera follow logic: Camera X follows playerX
-    let camX = playerX * ROAD_WIDTH;
+    // Camera follow logic: Camera X follows playerX with a safety limit
+    let camX = Math.max(-1.5 * ROAD_WIDTH, Math.min(1.5 * ROAD_WIDTH, playerX * ROAD_WIDTH));
 
     let basePercent = (position % SEGMENT_LENGTH) / SEGMENT_LENGTH;
     
@@ -305,10 +309,11 @@ function draw() {
 
     for (let n = 0; n < DRAW_DISTANCE; n++) {
         let segment = segments[(baseSegment.index + n) % segments.length];
-        segment.looped = segment.index < baseSegment.index;
+        // Looping logic for segments at the end of the data
+        let loopZ = (segment.index < baseSegment.index) ? totalLength : 0;
         
-        project(segment.p1, camX - x,      CAMERA_HEIGHT, position - (segment.looped ? totalLength : 0), CAMERA_DEPTH, width, height, ROAD_WIDTH);
-        project(segment.p2, camX - x - dx, CAMERA_HEIGHT, position - (segment.looped ? totalLength : 0), CAMERA_DEPTH, width, height, ROAD_WIDTH);
+        project(segment.p1, camX - x,      CAMERA_HEIGHT, position - loopZ, CAMERA_DEPTH, width, height, ROAD_WIDTH);
+        project(segment.p2, camX - x - dx, CAMERA_HEIGHT, position - loopZ, CAMERA_DEPTH, width, height, ROAD_WIDTH);
 
         x = x + dx;
         dx = dx + segment.curve;
