@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retro GP - Pseudo 3D Racing</title>
+    <link rel="stylesheet" href="./style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Press+Start+2P&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="gameCanvas"></canvas>
+        <div id="hud">
+            <div class="stat">
+                <span class="label">SPEED</span>
+                <span id="speedValue" class="value">0</span> <span class="unit">KM/H</span>
+            </div>
+            <div class="stat">
+                <span class="label">TIME</span>
+                <span id="timeValue" class="value">00:00:00</span>
+            </div>
+            <div id="messageBoard">PRESS START TO RACE</div>
+        </div>
+    </div>
+    <script type="module" src="./main.js"></script>
+</body>
+</html>
